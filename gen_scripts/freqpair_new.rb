@@ -1,15 +1,17 @@
 # Frequency Pair Finder
-# 2020-12-17 Naoki F., AIT
+# 2020-12-17 -> 2021-04-12 Naoki F., AIT
 # New BSD License is applied. See COPYING file for details.
 
-if ARGV.size != 2
-  STDERR.puts 'usage: ruby freqpair_new.rb lower_limit upper_limit'
+if ARGV.size != 3
+  STDERR.puts 'usage: ruby freqpair_new.rb prefix lower_limit upper_limit'
   exit 1
 end
-lower = ARGV[0].to_i
-upper = ARGV[1].to_i
+prefix = ARGV[0]
+lower = ARGV[1].to_i
+upper = ARGV[2].to_i
+freqs = Array.new
+found = 0
 
-puts "ma\tqa\tda\tfa\tmb\tqb\tdb\tfb\tcnt"
 6.upto(32) do |qa|
   48.upto(64) do |mac|
     qac = qa * 8
@@ -26,10 +28,31 @@ puts "ma\tqa\tda\tfa\tmb\tqb\tdb\tfb\tcnt"
         freq_m = mac * qbc / (mac * qbc).gcd(qac * mbc)
         freq_n = qac * mbc / (mac * qbc).gcd(qac * mbc)
         next if freq_m - freq_n != 1 || freq_n < lower || freq_n > upper || freq_n % qa != 0
-        puts "%.3f\t%d\t%d\t%.3f\t%.3f\t%.3f\t%d\t%.3f\t%.1f" %
-        [ma, qa, da, fa, mb, qb, db, fb, 0.5 * freq_n]
+        found += 1
+        freqpair = ["%s%02d" % [prefix, found], ma, da, qa, mb, db, qb, freq_n]
+        freqs << freqpair
       end
     end
   end
 end
-      
+
+puts "[[NORMAL]]"
+puts "ID\tA_M\tA_D\tA_Q\tB_M\tB_D\tB_Q\tCNT_PERIOD"
+freqs.each do |x|
+  puts "%s\t%.3f\t%d\t%.3f\t%.3f\t%d\t%.3f\t%d" %
+    [x[0], x[1], 1, x[3], x[4], 1, x[6], x[7]]
+end
+puts
+puts "[[JITTERY]]"
+puts "ID\tA_M\tA_D\tA_Q\tB_M\tB_D\tB_Q\tCNT_PERIOD"
+freqs.each do |x|
+  puts "%s\t%.3f\t%d\t%.3f\t%.3f\t%d\t%.3f\t%d" %
+    [x[0], x[1] * x[2], x[2], x[3], x[4] * x[5], x[5], x[6], x[7]]
+end
+puts
+puts "[[COMBINED]]"
+puts "ID\tA_M\tA_D\tA_Q\tB_M\tB_D\tB_Q\tCNT_PERIOD"
+freqs.each do |x|
+  puts "%s\t%.3f\t%d\t%.3f\t%.3f\t%d\t%.3f\t%d" %
+    [x[0], x[1] * x[2], x[2], 1, x[4] * x[5], x[5], x[6], x[7] / x[3]]
+end
